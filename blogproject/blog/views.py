@@ -1,3 +1,4 @@
+from django.views.generic import ListView,DetailView
 from django.shortcuts import render, get_object_or_404
 import markdown
 from django.utils.text import slugify
@@ -42,7 +43,6 @@ def detail(request, pk):
     print(post.created_time)
     return render(request, 'blog/detail.html', context={'post': post})
 
-
 def archive(request, year, month):
     post_list = Post.objects.filter(
         created_time__year=year, created_time__month=month).order_by('-created_time')
@@ -50,11 +50,8 @@ def archive(request, year, month):
 
 
 def category(request, pk):
-    print('hahaha category')
     cate = get_object_or_404(Category, pk=pk)
-    print(cate)
     post_list = Post.objects.filter(category=cate).order_by('-created_time')
-    print(post_list)
     return render(request, 'blog/index.html', context={'post_list': post_list})
 
 
@@ -62,3 +59,59 @@ def tag(request, pk):
     tag = get_object_or_404(Tag, pk=pk)
     post_list = Post.objects.filter(tags=tag).order_by("-created_time")
     return render(request, 'blog/index.html', {'post_list': post_list})
+
+
+
+
+
+# 获取文章列表 ， ListView 就是从数据库中获取某个模型列表数据的
+class IndexView(ListView):
+    model = Post
+    template_name = 'blog/index.html'
+    context_object_name = 'post_list'
+
+# 按年月归档
+class ArchiveView(IndexView):
+    def get_queryset(self):
+        year = self.kwargs.get('year')
+        month = self.kwargs.get('month')
+        return super().get_queryset().filter(created_time__year=year,created_time__month=month)
+
+# 标签
+class TagView(IndexView):
+    def get_queryset(self):
+        tag = get_object_or_404(Tag,pk=self.kwargs.get('pk'))
+        return super().get_queryset().filter(tags=tag)
+
+# 分类
+class CategoryView(IndexView):
+    def get_queryset(self):
+        cate = get_object_or_404(Category, pk=self.kwargs.get('pk'))
+        return super().get_queryset().filter(category=cate)
+
+class PostDetailView(DetailView):
+    model=Post
+    template_name='blog/detail.html'
+    context_object_name='post'
+
+    def get(self,request,*args,**kwargs):
+
+        response = super().get(request,*args,**kwargs)
+
+        self.object.increase_views()
+        return response
+
+    def get_object(self,queryset=None):
+        post = super().get_object(queryset=None)
+        md = markdown.Markdown(extensions=[
+            'markdown.extensions.extra',
+            'markdown.extensions.codehilite',
+            # 记得在顶部引入 TocExtension 和 slugify
+            TocExtension(slugify=slugify),
+        ])
+        post.body = md.convert(post.body)
+
+        m = re.search(r'<div class="toc">\s*<ul>(.*)</ul>\s*</div>', md.toc, re.S)
+        post.toc = m.group(1) if m is not None else ''
+
+        return post

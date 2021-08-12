@@ -69,6 +69,7 @@ class IndexView(ListView):
     model = Post
     template_name = 'blog/index.html'
     context_object_name = 'post_list'
+    paginate_by=3
 
 # 按年月归档
 class ArchiveView(IndexView):

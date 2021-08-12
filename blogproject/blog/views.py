@@ -1,9 +1,10 @@
-from django.views.generic import ListView,DetailView
+from django.views.generic import ListView, DetailView
 from django.shortcuts import render, get_object_or_404
 import markdown
 from django.utils.text import slugify
 from markdown.extensions.toc import TocExtension
 
+from pure_pagination.mixins import PaginationMixin
 # Create your views here.
 from django.http import HttpResponse
 from .models import Category, Post, Tag
@@ -15,7 +16,6 @@ def index(request):
     return render(request, 'blog/index.html', context={
         'post_list': post_list
     })
-
 
 def detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
@@ -48,12 +48,10 @@ def archive(request, year, month):
         created_time__year=year, created_time__month=month).order_by('-created_time')
     return render(request, 'blog/index.html', context={'post_list': post_list})
 
-
 def category(request, pk):
     cate = get_object_or_404(Category, pk=pk)
     post_list = Post.objects.filter(category=cate).order_by('-created_time')
     return render(request, 'blog/index.html', context={'post_list': post_list})
-
 
 def tag(request, pk):
     tag = get_object_or_404(Tag, pk=pk)
@@ -61,48 +59,51 @@ def tag(request, pk):
     return render(request, 'blog/index.html', {'post_list': post_list})
 
 
-
-
-
 # 获取文章列表 ， ListView 就是从数据库中获取某个模型列表数据的
-class IndexView(ListView):
+class IndexView(PaginationMixin,ListView):
     model = Post
     template_name = 'blog/index.html'
     context_object_name = 'post_list'
-    paginate_by=3
+    # 每页10条
+    paginate_by = 10
 
 # 按年月归档
 class ArchiveView(IndexView):
     def get_queryset(self):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
-        return super().get_queryset().filter(created_time__year=year,created_time__month=month)
+        return super().get_queryset().filter(created_time__year=year, created_time__month=month)
 
 # 标签
+
+
 class TagView(IndexView):
     def get_queryset(self):
-        tag = get_object_or_404(Tag,pk=self.kwargs.get('pk'))
+        tag = get_object_or_404(Tag, pk=self.kwargs.get('pk'))
         return super().get_queryset().filter(tags=tag)
 
 # 分类
+
+
 class CategoryView(IndexView):
     def get_queryset(self):
         cate = get_object_or_404(Category, pk=self.kwargs.get('pk'))
         return super().get_queryset().filter(category=cate)
 
+
 class PostDetailView(DetailView):
-    model=Post
-    template_name='blog/detail.html'
-    context_object_name='post'
+    model = Post
+    template_name = 'blog/detail.html'
+    context_object_name = 'post'
 
-    def get(self,request,*args,**kwargs):
+    def get(self, request, *args, **kwargs):
 
-        response = super().get(request,*args,**kwargs)
+        response = super().get(request, *args, **kwargs)
 
         self.object.increase_views()
         return response
 
-    def get_object(self,queryset=None):
+    def get_object(self, queryset=None):
         post = super().get_object(queryset=None)
         md = markdown.Markdown(extensions=[
             'markdown.extensions.extra',
@@ -112,7 +113,8 @@ class PostDetailView(DetailView):
         ])
         post.body = md.convert(post.body)
 
-        m = re.search(r'<div class="toc">\s*<ul>(.*)</ul>\s*</div>', md.toc, re.S)
+        m = re.search(
+            r'<div class="toc">\s*<ul>(.*)</ul>\s*</div>', md.toc, re.S)
         post.toc = m.group(1) if m is not None else ''
 
         return post

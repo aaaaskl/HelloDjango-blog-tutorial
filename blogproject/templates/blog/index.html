@@ -23,30 +23,7 @@
 <div class="no-post">暂时还没有发布的文章！</div>
 {% endfor %}
 
-<section class="comment-area" id="comment-area">
-    <hr>
-    <h3>发表评论</h3>
-    <form action="#" method="post" class="comment-form">
-        <div class="row">
-            <div class="col-md-4">
-                <label for="id_name">名字：</label>
-                <input type="text" id="id_name" name="name" required>
-            </div>
-            <div class="col-md-4">
-                <label for="id_email">邮箱：</label>
-                <input type="email" id="id_email" name="email" required>
-            </div>
-            <div class="col-md-4">
-                <label for="id_url">网址：</label>
-                <input type="text" id="id_url" name="url">
-            </div>
-            <div class="col-md-12">
-                <label for="id_comment">评论：</label>
-                <textarea name="comment" id="id_comment" required></textarea>
-                <button type="submit" class="comment-btn">发表</button>
-            </div>
-        </div>
-        <!-- row -->
-    </form>
-
-</section> {% endblock main %} {% block toc %} {% endblock toc %}
+<!--
+    分页模块 
+-->
+{% if is_paginated %} {{ page_obj.render }} {% endif %} {% endblock main %} {% block toc %} {% endblock toc %}

@@ -130,7 +130,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS=(
     os.path.join(BASE_DIR,"static"),
 )
-# 静态资源 我的分箱
+# 静态资源,zs
 STATIC_ROOT=os.path.join(BASE_DIR,"/static/")
 
 

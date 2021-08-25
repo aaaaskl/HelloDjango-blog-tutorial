@@ -1,0 +1,60 @@
+version: '3'
+services:
+  tomcat01: 
+    image: my_tomcat:1.0 # 镜像名称或镜像ID
+    ports: 
+      - "8080:8080"
+    volumes: 
+      - tomcatapps01:/usr/local/tomcat/apps
+    networks: 
+      - hello
+    depends_on: # 依赖一下容器启动后才启动
+      - tomcat02
+      - mysql
+      - redis
+    
+
+  tomcat02:
+    image: my_tomcat:1.0
+    ports: 
+      - "8081:8080"
+    volumes: 
+      - tomcatapps02:/usr/local/tomcat/apps
+    networks: 
+      - hello
+
+  mysql:
+    image: mysql:5.7.32
+    ports: 
+      - "3307:3306"
+    volumes: 
+      - mysqldata:/var/lib/mysql
+      - mysqlconf:/etc/mysql
+    # environment: 
+    #   - MYSQL_ROOT_PASSWORD=12345678
+    env_file: 
+      - ./mysql.env
+    networks: 
+      - hello
+  
+  redis:
+    image: redis:alpine
+    ports: 
+      - "6379:6379"
+    volumes: 
+      - redisdata:/data
+    networks: 
+      - hello
+    command: "redis-server --appendonly yes"
+
+volumes: # 服务中volumes自动创建的卷名，如果要自定义 在下面设置external: true 并且提前创建该数据卷
+  tomcatapps01: 
+    external:  # 声明
+      true
+  tomcatapps02:
+  mysqldata:
+  mysqlconf:
+  redisdata:
+
+networks: 
+  hello: 

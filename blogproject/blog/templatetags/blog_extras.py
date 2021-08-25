@@ -21,7 +21,6 @@ def show_recent_posts(context,num=5):
 @register.inclusion_tag('blog/inclusions/_archives.html',takes_context=True)
 def show_archives(context):
     date_list = Post.objects.annotate(year=ExtractYear('created_time'), month=ExtractMonth('created_time')).values('year','month').order_by('-year','-month').annotate(num_posts=Count('id'))
-    print(date_list)
     return {
         # 'date_list':Post.objects.dates('created_time','month',order='DESC')
         'date_list':date_list
